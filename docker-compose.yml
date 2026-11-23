@@ -1,0 +1,16 @@
+name: taiko-codex-prod
+services:
+  web:
+    image: taiko-codex-web:${TAIKO_COMMIT:-local}
+    build:
+      context: .
+      args:
+        TAIKO_COMMIT: ${TAIKO_COMMIT:-local}
+    ports:
+      - "${TAIKO_BIND_IP:-127.0.0.1}:${TAIKO_PORT:-3114}:80"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 5

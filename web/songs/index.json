@@ -1,0 +1,18 @@
+[
+  {
+    "id": "paper-lanterns",
+    "chart": "paper-lanterns.tja",
+    "author": "taiko-codex",
+    "theme": "warm",
+    "tag": "暖调电子",
+    "duration": 43
+  },
+  {
+    "id": "voltage-crossing",
+    "chart": "voltage-crossing.tja",
+    "author": "taiko-codex",
+    "theme": "cool",
+    "tag": "合成贝斯",
+    "duration": 34
+  }
+]

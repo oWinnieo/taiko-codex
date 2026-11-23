@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111311">
+  <meta name="description" content="taiko-codex 双区鼓点节奏游戏。浏览器里直接试玩原创曲目，也可导入本地 TJA 曲包。">
+  <title>taiko-codex · 双区鼓点</title>
+  <link rel="icon" href="./icon.png" type="image/png">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./src/main.js"></script>
+</head>
+<body data-mode="ready">
+  <header class="topbar">
+    <div class="shell topbar-inner">
+      <div class="brand"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><span>TAIKO<span class="brand-muted">/</span>CODEX</span></div>
+      <div class="header-actions">
+        <button id="help-open" class="quiet" type="button">玩法</button>
+        <button id="settings-open" class="quiet settings-open" type="button"><span aria-hidden="true">⚙</span> 设置</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="intro" aria-labelledby="main-title">
+      <div>
+        <p class="eyebrow"><span></span> 双区鼓点节奏游戏</p>
+        <h1 id="main-title">跟上鼓点<span>。</span></h1>
+        <p class="intro-description">听音乐，用鼓面和鼓边接住每一个拍点。</p>
+      </div>
+      <div class="intro-action">
+        <button id="start" class="primary start" type="button" disabled><span class="play-icon" aria-hidden="true"></span><span>开始演奏</span></button>
+        <p><kbd>Enter</kbd> 开始 <i></i> 键盘 / 触屏</p>
+      </div>
+    </section>
+
+    <section id="stage" class="stage" aria-label="演奏台">
+      <div class="stage-top">
+        <div class="now-playing">
+          <span class="now-icon" aria-hidden="true">♫</span>
+          <div><span class="micro now-label">当前曲目</span><strong id="now-title">正在载入曲库</strong></div>
+        </div>
+        <div id="ready-info" class="stage-info"><span id="now-bpm">— BPM</span><span id="now-chart">—</span></div>
+        <div id="play-info" class="stage-info" hidden>
+          <div><span class="micro">分数</span><strong id="score">0</strong></div>
+          <div><span class="micro">连击</span><strong id="combo">0</strong></div>
+          <button id="pause" class="quiet pause" aria-label="暂停" type="button"><span aria-hidden="true">Ⅱ</span></button>
+        </div>
+      </div>
+      <div class="progress-track" aria-hidden="true"><div id="progress"></div></div>
+      <div class="stage-screen">
+        <canvas id="lane" role="img" aria-label="音符从右向左移动。橙色为鼓面，蓝色为鼓边，抵达左侧击打线时按键。"></canvas>
+        <div id="stage-message" class="stage-message" aria-hidden="true" hidden></div>
+      </div>
+      <div class="pad-row" aria-label="触屏鼓垫">
+        <button class="pad rim" data-hit="rim" data-hand="left" type="button"><kbd>D</kbd><span>鼓边</span></button>
+        <button class="pad center" data-hit="center" data-hand="left" type="button"><kbd>F</kbd><span>鼓面</span></button>
+        <button class="pad center" data-hit="center" data-hand="right" type="button"><kbd>J</kbd><span>鼓面</span></button>
+        <button class="pad rim" data-hit="rim" data-hand="right" type="button"><kbd>K</kbd><span>鼓边</span></button>
+      </div>
+    </section>
+
+    <section class="library" aria-labelledby="library-title">
+      <div class="library-header">
+        <div class="library-title"><h2 id="library-title">曲库</h2><span id="song-count"></span></div>
+        <div class="library-controls">
+          <button id="import-open" class="quiet import-button" type="button" disabled><span aria-hidden="true">＋</span> 导入曲包</button>
+          <input id="file-picker" type="file" multiple accept=".tja,.ogg,.oga,.mp3,.wav,.m4a,.aac,.flac,.opus" hidden>
+          <input id="folder-picker" type="file" webkitdirectory multiple hidden>
+        </div>
+      </div>
+      <p id="notice" class="notice" role="status" hidden></p>
+      <div id="song-list" class="song-list"></div>
+      <div class="drop-hint" id="drop-hint"><span aria-hidden="true">↥</span> 拖入 <b>.tja</b> 与对应音频可添加曲目</div>
+    </section>
+
+    <footer class="page-footer"><span>TAIKO/CODEX</span><span>本地曲包保存在此浏览器</span></footer>
+  </main>
+
+  <dialog id="settings" aria-labelledby="settings-title">
+    <form method="dialog" class="dialog-body">
+      <div class="dialog-header"><h2 id="settings-title">演奏设置</h2><button class="quiet close" value="close" aria-label="关闭">×</button></div>
+      <label class="setting-row"><span>音乐音量</span><output id="music-value"></output><input id="music-volume" type="range" min="0" max="100"></label>
+      <label class="setting-row"><span>击打音量</span><output id="effects-value"></output><input id="effects-volume" type="range" min="0" max="100"></label>
+      <label class="setting-row"><span>输入延迟</span><output id="delay-value"></output><input id="delay" type="range" min="-250" max="250"></label>
+      <p class="muted">正值会补偿听到节拍后较晚的击打。</p>
+      <div class="calibration">
+        <button id="calibrate" class="quiet" type="button">开始节拍校准</button>
+        <button id="calibration-tap" class="primary" type="button" hidden>跟拍</button>
+        <button id="calibration-apply" class="quiet" type="button" hidden>应用偏移</button>
+        <p id="calibration-status" role="status">听过两声低音后，随高音拍点按 F 或点「跟拍」。</p>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="help" aria-labelledby="help-title">
+    <form method="dialog" class="dialog-body">
+      <div class="dialog-header"><h2 id="help-title">怎么玩</h2><button class="quiet close" value="close" aria-label="关闭">×</button></div>
+      <p>音符抵达左侧击打圈时，按对应按键或触碰鼓垫。</p>
+      <ul class="help-list">
+        <li><span class="dot orange"></span><b>鼓面</b> <kbd>F</kbd> / <kbd>J</kbd></li>
+        <li><span class="dot blue"></span><b>鼓边</b> <kbd>D</kbd> / <kbd>K</kbd></li>
+        <li><span class="dot lime"></span><b>连打</b> 段内连续敲任意鼓垫</li>
+        <li><span class="dot purple"></span><b>气球</b> 段内连续敲鼓面，达到指定次数</li>
+      </ul>
+      <p>大音符双手同时敲击会加分。按 <kbd>Esc</kbd> 暂停或继续。</p>
+    </form>
+  </dialog>
+
+  <dialog id="import-dialog" aria-labelledby="import-title">
+    <form method="dialog" class="dialog-body">
+      <div class="dialog-header"><h2 id="import-title">导入本地曲包</h2><button class="quiet close" value="close" aria-label="关闭">×</button></div>
+      <p>同时选择 <code>.tja</code> 谱面与 <code>WAVE</code> 指定的音频，或选择包含它们的文件夹。</p>
+      <div class="dialog-actions">
+        <button id="choose-files" class="primary" type="button">选择文件</button>
+        <button id="choose-folder" class="quiet" type="button">选择文件夹</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="pause-dialog" aria-labelledby="pause-title">
+    <div class="dialog-body">
+      <div class="dialog-header"><h2 id="pause-title">演奏暂停</h2></div>
+      <div class="dialog-actions">
+        <button id="resume" class="primary" type="button">继续演奏</button>
+        <button id="retry-pause" class="quiet" type="button">重新开始</button>
+        <button id="quit" class="quiet" type="button">返回曲库</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="results" aria-labelledby="result-title">
+    <div class="dialog-body">
+      <div class="dialog-header"><h2 id="result-title">演奏结算</h2><span id="grade"></span></div>
+      <p id="result-song" class="muted"></p>
+      <div id="summary" class="summary"></div>
+      <div class="dialog-actions">
+        <button id="retry" class="primary" type="button">再来一次</button>
+        <button id="back" class="quiet" type="button">返回曲库</button>
+      </div>
+    </div>
+  </dialog>
+</body>
+</html>
